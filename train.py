@@ -136,7 +136,7 @@ def train(opt):
             last_step = 0
 
         try:
-            ret = model.load_state_dict(torch.load(weights_path), strict=False)
+            ret = model.load_state_dict(torch.load(weights_path, weights_only=True), strict=False)
         except RuntimeError as e:
             print(f'[Warning] Ignoring {e}')
             print(
