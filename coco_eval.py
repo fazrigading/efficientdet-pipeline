@@ -146,7 +146,7 @@ if __name__ == '__main__':
     if override_prev_results or not os.path.exists(f'{SET_NAME}_bbox_results.json'):
         model = EfficientDetBackbone(compound_coef=compound_coef, num_classes=len(obj_list),
                                      ratios=eval(params['anchors_ratios']), scales=eval(params['anchors_scales']))
-        model.load_state_dict(torch.load(weights_path, weights_only=True, map_location=torch.device('cpu' if not use_cuda else f'cuda:{gpu}')))
+        model.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu' if not use_cuda else f'cuda:{gpu}')))
         model.requires_grad_(False)
         model.eval()
 
