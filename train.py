@@ -221,6 +221,8 @@ def train(opt):
                         # elif multiple gpus, send it to multiple gpus in CustomDataParallel, not here
                         imgs = imgs.cuda()
                         annot = annot.cuda()
+                    ### FIXME 2021-04-16: add obj_list to model
+                    ### elif multiple gpus, send it to multiple gpus in CustomDataParallel
 
                     optimizer.zero_grad()
                     cls_loss, reg_loss = model(imgs, annot, obj_list=params.obj_list)
@@ -253,7 +255,7 @@ def train(opt):
 
                     if step % opt.save_interval == 0 and step > 0:
                         save_checkpoint(model, f'efficientdet-d{opt.compound_coef}_{epoch}_{step}.pth')
-                        print('checkpoint...')
+                        print(' [CHECKPOINT]')
 
                 except Exception as e:
                     print('[Error]', traceback.format_exc())
