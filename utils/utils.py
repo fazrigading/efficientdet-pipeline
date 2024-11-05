@@ -192,18 +192,40 @@ class CustomDataParallel(nn.DataParallel):
         self.num_gpus = num_gpus
 
     def scatter(self, inputs, kwargs, device_ids):
-        # More like scatter and data prep at the same time. The point is we prep the data in such a way
-        # that no scatter is necessary, and there's no need to shuffle stuff around different GPUs.
-        devices = ['cuda:' + str(x) for x in range(self.num_gpus)]
-        splits = inputs[0].shape[0] // self.num_gpus
+        # Ensure proper devices are assigned
+        devices = [f'cuda:{device_id}' for device_id in device_ids]
+        batch_size = inputs[0].shape[0]
+        splits = batch_size // len(devices)
 
+        # Check if the batch size is sufficient for splitting
         if splits == 0:
-            raise Exception('Batchsize must be greater than num_gpus.')
+            raise ValueError('Batch size must be greater than or equal to the number of GPUs.')
 
-        return [(inputs[0][splits * device_idx: splits * (device_idx + 1)].to(f'cuda:{device_idx}', non_blocking=True),
-                 inputs[1][splits * device_idx: splits * (device_idx + 1)].to(f'cuda:{device_idx}', non_blocking=True))
-                for device_idx in range(len(devices))], \
-               [kwargs] * len(devices)
+        # Distribute data across GPUs
+        scattered_inputs = []
+        for i, device in enumerate(devices):
+            start_index = splits * i
+            end_index = splits * (i + 1) if i != len(devices) - 1 else batch_size
+            scattered_inputs.append((
+                inputs[0][start_index:end_index].to(device, non_blocking=True),
+                inputs[1][start_index:end_index].to(device, non_blocking=True)
+            ))
+
+        return scattered_inputs, [kwargs] * len(devices)
+
+    # def scatter(self, inputs, kwargs, device_ids):
+    #     # More like scatter and data prep at the same time. The point is we prep the data in such a way
+    #     # that no scatter is necessary, and there's no need to shuffle stuff around different GPUs.
+    #     devices = ['cuda:' + str(x) for x in range(self.num_gpus)]
+    #     splits = inputs[0].shape[0] // self.num_gpus
+
+    #     if splits == 0:
+    #         raise Exception('Batchsize must be greater than num_gpus.')
+
+    #     return [(inputs[0][splits * device_idx: splits * (device_idx + 1)].to(f'cuda:{device_idx}', non_blocking=True),
+    #              inputs[1][splits * device_idx: splits * (device_idx + 1)].to(f'cuda:{device_idx}', non_blocking=True))
+    #             for device_idx in range(len(devices))], \
+    #            [kwargs] * len(devices)
 
 
 def get_last_weights(weights_path):
